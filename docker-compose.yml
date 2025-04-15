@@ -6,7 +6,7 @@ services:
     environment:
       - NODE_ENV=development
     ports:
-      - "80:3000"
+      - "8044:3000"
     volumes:
       - .:/app
       - ./docker/containers/node:/home/vscode
