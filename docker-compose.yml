@@ -7,7 +7,7 @@ services:
       - NODE_ENV=development
     ports:
       - "8044:3000"
-    command: node server.js
+    command: npm install && node server.js
     volumes:
       - .:/app
       - ./docker/containers/node:/home/vscode
