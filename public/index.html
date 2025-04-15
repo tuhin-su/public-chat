@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Messenger Style Chat</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f0f2f5;
+    }
+
+    #chat-container {
+      height: 85vh;
+      overflow-y: auto;
+      padding: 1rem;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .message.current-user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar-container {
+      position: relative;
+      margin-right: 10px;
+      margin-left: 10px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .online-dot {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 10px;
+      height: 10px;
+      background-color: #28a745;
+      border: 2px solid white;
+      border-radius: 50%;
+    }
+
+    .bubble {
+      background-color: #e4e6eb;
+      padding: 10px 15px;
+      border-radius: 20px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+
+    .bubble.current-user-bubble {
+      background-color: #4caf50;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container py-4">
+    <div id="chat-container">
+      <div id="chat"></div>
+    </div>
+    <div class="input-group mt-3">
+      <input type="text" id="msg" class="form-control" placeholder="Type a message...">
+      <button class="btn btn-primary" id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <!-- script -->
+  <script>
+    let me = {};
+    let socket = null;
+    // check the UI img url and name in localStorage
+    if (localStorage.getItem('profileImage') != null && localStorage.getItem('profileName') != null) {
+      me = {
+        name: localStorage.getItem('profileName'),
+        img: localStorage.getItem('profileImage')
+      }
+
+      socket = new WebSocket(`ws://${location.host}`);
+      socket.onopen = () => {
+        console.log('Connected to WebSocket server');
+        send({
+          type: 2,
+          user: me
+        })
+      }
+    }
+
+    else {
+      window.location.href = '/login.html';
+    }
+
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('msg');
+    const sendBtn = document.getElementById('sendBtn');
+
+    let otherUser = [];
+
+    let chatMessages = [];
+
+    function send(data) {
+      if (socket != null) {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify(data));
+        }
+      }
+    }
+
+    function dataFrame(text, type) {
+      return {
+        type,
+        text
+      }
+    }
+
+    function createNewUserFrame(user, avatarUrl) {
+      return {
+        user,
+        avatarUrl
+      }
+    }
+
+    function addMessageToChat(isMe=false, data) {
+      // console.log(data)
+      // chat.innerHTML = ''; // Clear chat
+      const message = document.createElement('div');
+      message.className = `message ${ isMe ? 'current-user' : ''}`;
+
+      const avatarContainer = document.createElement('div');
+      avatarContainer.className = 'avatar-container';
+
+      const avatar = document.createElement('img');
+      avatar.src = data.user.img;
+      avatar.className = 'avatar';
+      avatarContainer.appendChild(avatar);
+
+      const dot = document.createElement('div');
+      dot.className = 'online-dot '+data.user.connectionId;
+      avatarContainer.appendChild(dot);
+
+      const bubble = document.createElement('div');
+      bubble.className = `bubble ${isMe ? 'current-user-bubble' : ''}`;
+      bubble.textContent = data.text;
+
+      message.appendChild(avatarContainer);
+      message.appendChild(bubble);
+      chat.appendChild(message);
+      // chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendMessage() {
+      if (input.value) {
+        const message = {
+          type: 1,
+          text: input.value
+        }
+        send(message);
+       
+        addMessageToChat(true, {
+          user: me,
+          text: input.value
+        });
+
+        input.value = '';
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type == 2) {
+        otherUser.push(data.user);
+      }
+      else if (data.type == 3) {
+        otherUser = otherUser.filter((user) => user.connectionId !== data.connectionId);
+        // remove online-dot class from all inter html chat where class from connectionId
+        document.querySelectorAll('.online-dot').forEach((dot) => {
+          if (dot.classList.contains(data.connectionId)) {
+            dot.classList.remove('online-dot');
+          }
+        });
+      }
+      else if (data.type == 1) {
+        let message = {
+          user: otherUser.find((user) => user.connectionId === data.connectionId),
+          text: data.text
+        }
+        // console.log(message);
+        addMessageToChat(false, message);
+      }
+      else if (data.type == 0) {
+        let message = {
+          user: data.user,
+          text: data.text
+        }
+        // console.log(message);
+        addMessageToChat(false, message);
+      }
+      else if (data.type == 4) {
+        otherUser = data.users;
+      }
+      else {
+        console.log(data);
+      }
+    }
+
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

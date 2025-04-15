@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Profile Form with UID</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+        background-color: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100vh;
+      }
+      .profile-form-container {
+        max-width: 400px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      }
+      .profile-img-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 1rem;
+      }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      .result-container {
+        margin-top: 2rem;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container py-4">
+      <div class="profile-form-container">
+        <h3 class="text-center mb-4">Create Your Profile</h3>
+        <form id="profileForm">
+          <div class="form-group text-center">
+            <!-- Random default image will be shown here -->
+            <img id="profileImgPreview" alt="Profile Image" class="profile-img-preview">
+            <div class="form-group">
+              <input type="file" class="form-control" id="profileImg" accept="image/*">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="profileName">Name</label>
+            <input type="text" class="form-control" id="profileName" placeholder="Enter your name" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Save Profile</button>
+        </form>
+      </div>
+    <script>
+      const profileImgInput = document.getElementById('profileImg');
+      const profileNameInput = document.getElementById('profileName');
+      const profileImgPreview = document.getElementById('profileImgPreview');
+      const profileForm = document.getElementById('profileForm');
+     
+
+      // Generate a unique ID (UID) based on timestamp and random values
+      function generateUID() {
+        const timestamp = Date.now(); // current timestamp
+        const randomValue = crypto.getRandomValues(new Uint32Array(1))[0]; // random 32-bit value
+        return `${timestamp}-${randomValue}`;
+      }
+
+      // Set a random default image when the page loads
+      function setRandomProfileImage() {
+        const randomImageUrl = `https://i.pravatar.cc/120?u=${Math.random()}`;
+        profileImgPreview.src = randomImageUrl;
+      }
+
+      // Preview the profile image
+      profileImgInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            profileImgPreview.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Handle form submission
+      profileForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = profileNameInput.value;
+        const imageUrl = profileImgPreview.src;
+        const uid = generateUID(); // Generate a UID based on the system's signature
+
+        // Log the base64 image data, name, and UID in the console
+        console.log('Profile Image (Base64):', imageUrl);
+        console.log('Name:', name);
+        console.log('UID:', uid);
+
+        // Store name, image URL, and UID in localStorage or send to the server (optional)
+        localStorage.setItem('profileName', name);
+        localStorage.setItem('profileImage', imageUrl);
+        localStorage.setItem('profileUID', uid);
+        window.location.href = '/index.html';
+      });
+
+      // Set random profile image when page loads
+      setRandomProfileImage();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
