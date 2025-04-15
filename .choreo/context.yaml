@@ -1,0 +1,20 @@
+- org: innogate
+  project: default
+  components:
+    - name: chat-backend
+      source:
+        path: .
+      build:
+        commands:
+          - npm install
+      run:
+        command: node server.js
+        containerPort: 3000
+      env:
+        - name: PORT
+          value: "3000"
+      ingresses:
+        - name: http-web
+          port: 3000
+          type: public
+          context: /
